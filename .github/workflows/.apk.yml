@@ -12,7 +12,7 @@ jobs:
         include:
           - nome: motoboy
             titulo: STEVEDRIVE
-            id: br.com.stevedrive.motoboy
+            id: br.com.stevedrive.driver
             entrada: index.html
     steps:
       - uses: actions/checkout@v4
