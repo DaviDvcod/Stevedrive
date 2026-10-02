@@ -13,7 +13,7 @@ jobs:
           - nome: motoboy
             titulo: STEVEDRIVE
             id: br.com.stevedrive.driver
-            entrada: index.html
+            url: https://davidvcod.github.io/Stevedrive/
     steps:
       - uses: actions/checkout@v4
 
@@ -29,12 +29,20 @@ jobs:
       - name: Preparar o app
         run: |
           mkdir -p app/www
-          cp manifest.json sw.js icon-*.png app/www/ 2>/dev/null || true
-          cp ${{ matrix.entrada }} app/www/index.html
+          cp index.html app/www/index.html
           cd app
           npm init -y
           npm install @capacitor/core @capacitor/cli @capacitor/android
           npx cap init "${{ matrix.titulo }}" ${{ matrix.id }} --web-dir www
+          rm -f capacitor.config.ts
+          cat > capacitor.config.json <<EOF
+          {
+            "appId": "${{ matrix.id }}",
+            "appName": "${{ matrix.titulo }}",
+            "webDir": "www",
+            "server": { "url": "${{ matrix.url }}", "cleartext": false }
+          }
+          EOF
           npx cap add android
           sed -i 's#</manifest>#<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/><uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/><uses-permission android:name="android.permission.POST_NOTIFICATIONS"/></manifest>#' android/app/src/main/AndroidManifest.xml
           npx cap sync android
