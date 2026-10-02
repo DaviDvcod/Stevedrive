@@ -1,0 +1,51 @@
+name: Gerar APK
+
+on:
+  workflow_dispatch:
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - nome: motoboy
+            titulo: STEVEDRIVE
+            id: br.com.stevedrive.motoboy
+            entrada: index.html
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Preparar o app
+        run: |
+          mkdir -p app/www
+          cp manifest.json sw.js icon-*.png app/www/ 2>/dev/null || true
+          cp ${{ matrix.entrada }} app/www/index.html
+          cd app
+          npm init -y
+          npm install @capacitor/core @capacitor/cli @capacitor/android
+          npx cap init "${{ matrix.titulo }}" ${{ matrix.id }} --web-dir www
+          npx cap add android
+          sed -i 's#</manifest>#<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/><uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/><uses-permission android:name="android.permission.POST_NOTIFICATIONS"/></manifest>#' android/app/src/main/AndroidManifest.xml
+          npx cap sync android
+
+      - name: Compilar o APK
+        run: |
+          cd app/android
+          chmod +x gradlew
+          ./gradlew assembleDebug
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: apk-${{ matrix.nome }}
+          path: app/android/app/build/outputs/apk/debug/app-debug.apk
